@@ -6,16 +6,21 @@ component extends="foundry.core" {
   variables.path = require('path');
   variables.process = require('process');
   variables.exists = fs.exists;
+  variabiles._ = require("util");
 
   // store the actual TMP directory
   variables._TMP = _getTMPDir();
 
     // the random characters to choose from
   variables.randomChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-  variables.randomCharsLength = randomChars.length;
+  variables.randomCharsLength = len(randomChars);
 
     // this will hold the objects need to be removed on exit
   variables._removeObjects = [];
+
+  public any function dir() {
+    return _createTmpDir(argumentCollection=arguments);
+  }
 
   /**
   * Gets the temp directory.
@@ -23,13 +28,13 @@ component extends="foundry.core" {
   * @return {String}
   * @api private
   */
-  function _getTMPDir() {
+  private any function  _getTMPDir() {
     var tmpNames = [ 'TMPDIR', 'TMP', 'TEMP' ];
     length = arrayLen(tmpNames);
 
-    for (var i = 0; i < length; i++) {
-      if (process.env(tmpNames[i])) continue;
-
+    for (var i = 1; i < length; i++) {
+      if (len(trim(process.env(tmpNames[i]))) EQ 0) continue;
+      console.log(process.env(tmpNames[i]));
       return process.env(tmpNames[i]);
     }
 
@@ -48,86 +53,90 @@ component extends="foundry.core" {
   //   return typeof obj === 'undefined';
   // };
 
-  // /**
-  // * Parses the function arguments.
-  // *
-  // * This function helps to have optional arguments.
-  // *
-  // * @param {Object} options
-  // * @param {Function} callback
-  // * @api private
-  // */
-  // function _parseArguments(options, callback) {
-  //   if (!callback || typeof callback != "function") {
-  //     callback = options;
-  //     options = {};
-  //   }
+  /**
+  * Parses the function arguments.
+  *
+  * This function helps to have optional arguments.
+  *
+  * @param {Object} options
+  * @param {Function} callback
+  * @api private
+  */
+  private any function  _parseArguments(options, callback) {
+    if (!structKeyExists(arguments,'callback') || !_.isFunction(callback)) {
+      callback = options;
+      options = {};
+    }
 
-  //   return [ options, callback ];
-  // };
+    return [ options, callback ];
+  };
 
-  // /**
-  // * Gets a temporary file name.
-  // *
-  // * @param {Object} opts
-  // * @param {Function} cb
-  // * @api private
-  // */
-  // function _getTmpName(options, callback) {
-  //   var
-  //     args = _parseArguments(options, callback),
-  //     opts = args[0],
-  //     cb = args[1],
-  //     template = opts.template,
-  //     templateDefined = !_isUndefined(template),
-  //     tries = opts.tries || 3;
+  /**
+  * Gets a temporary file name.
+  *
+  * @param {Object} opts
+  * @param {Function} cb
+  * @api private
+  */
+  private any function _getTmpName(options, callback) {
+    var args = _parseArguments(options, callback);
+     var  opts = args[1];
+     var  cb = args[2];
+     var  templateDefined = (structKeyExists(opts,'template'));
+     var  template = (templateDefined)? new RegExp(opts.template) : "";
+     var  tries = structKeyExists(opts,'tries')? opts.tries : 3;
+    if (!isNumeric(tries) || tries < 0)
+      return cb('Invalid tries');
 
-  //   if (isNaN(tries) || tries < 0)
-  //     return cb(new Error('Invalid tries'));
+    if (templateDefined && !template.match("XXXXXX")) { 
+    
+      return cb('Invalid template provided');
+    }
 
-  //   if (templateDefined && !template.match(/XXXXXX/))
-  //     return cb(new Error('Invalid template provided'));
+    var _getName = function() {
 
-  //   function _getName() {
+      // prefix and postfix
+      if (!templateDefined) {
+        var name = arrayToList([
+          (!structKeyExists(opts,'prefix')) ? 'tmp-' : opts.prefix,
+          (createUUID()),
+          (!structKeyExists(opts,'postfix')) ? '' : opts.postfix,
+        ],'');
+        var dir = structKeyExists(opts,'dir')? opts.dir : variables._TMP;
 
-  //     // prefix and postfix
-  //     if (!templateDefined) {
-  //       var name = [
-  //         (_isUndefined(opts.prefix)) ? 'tmp-' : opts.prefix,
-  //         process.pid,
-  //         (Math.random() * 0x1000000000).toString(36),
-  //         opts.postfix
-  //       ].join('');
+        return path.join(dir, name);
+      }
 
-  //       return path.join(opts.dir || _TMP, name);
-  //     }
+      // mkstemps like template
+      var chars = [];
 
-  //     // mkstemps like template
-  //     var chars = [];
+      for (var i = 0; i < 6; i++) {
+        chars.add(
+          randomChars.substr(Math.floor(Math.random() * randomCharsLength), 1));
+      }
 
-  //     for (var i = 0; i < 6; i++) {
-  //       chars.push(
-  //         randomChars.substr(Math.floor(Math.random() * randomCharsLength), 1));
-  //     }
+      return replace(template,XXXXXX,arrayToList(chars.join,''));
+    };
 
-  //     return template.replace(/XXXXXX/, chars.join(''));
-  //   };
+    _getUniqueName = function() {
 
-  //   (function _getUniqueName() {
-  //     var name = _getName();
+      var name = _getName();
+      
+      // check whether the path exists then retry if needed
+      fs.exists(name, function(pathExists) {
+        if (pathExists) {
+          if (tries-- > 0) return _getUniqueName();
 
-  //     // check whether the path exists then retry if needed
-  //     exists(name, function _pathExists(pathExists) {
-  //       if (pathExists) {
-  //         if (tries-- > 0) return _getUniqueName();
+          return cb('Could not get a unique tmp filename, max tries reached');
+        };
+        cb({}, name);
+      });
+    };
 
-  //         return cb(new Error('Could not get a unique tmp filename, max tries reached'));
-  //       }
+    _getUniqueName();
 
-  //       cb(null, name);
-  //     });
-  //   }());
-  // };
+    return true;
+  };
 
   // /**
   // * Creates and opens a temporary file.
@@ -159,33 +168,32 @@ component extends="foundry.core" {
   //   });
   // };
 
-  // /**
-  // * Creates a temporary directory.
-  // *
-  // * @param {Object} options
-  // * @param {Function} callback
-  // * @api public
-  // */
-  // function _createTmpDir(options, callback) {
-  //   var
-  //     args = _parseArguments(options, callback),
-  //     opts = args[0],
-  //     cb = args[1];
+  /**
+  * Creates a temporary directory.
+  *
+  * @param {Object} options
+  * @param {Function} callback
+  * @api public
+  */
+  public any function _createTmpDir(options, callback) {
+    var args = _parseArguments(argumentCollection=arguments);
+    var opts = args[1];
+    var cb = args[2];
 
-  //   // gets a temporary filename
-  //   _getTmpName(opts, function _tmpNameCreated(err, name) {
-  //     if (err) return cb(err);
+    // gets a temporary filename
+    _getTmpName(opts, function(err, name) {
+      if (structKeyExists(arguments,'err') AND structCount(arguments.err) GT 0) return cb(err);
 
-  //     // create the directory
-  //     fs.mkdir(name, opts.mode || 0700, function _dirCreated(err) {
-  //       if (err) return cb(err);
+      // create the directory
+      fs.mkdir(name, 0700, function(err) { 
+        if (structKeyExists(arguments,'err') and structCount(arguments.err) GT 0) return cb(err);
 
-  //       if (!opts.keep) _removeObjects.push([ fs.rmdirSync, name ]);
+        if (!structKeyExists(opts,'keep')) _removeObjects.add([ fs.rmdirSync, name ]);
 
-  //       cb(null, name);
-  //     });
-  //   });
-  // };
+        cb('', name);
+      });
+    });
+  };
 
   // /**
   // * The garbage collector.
@@ -205,9 +213,4 @@ component extends="foundry.core" {
   // adding to the exit listener
   //process.addListener('exit', _garbageCollector);
 
-  // exporting all the needed methods
-  this.tmpdir = _TMP;
-  this.dir = _createTmpDir;
-  this.file = _createTmpFile;
-  this.tmpName = _getTmpName;
 }
