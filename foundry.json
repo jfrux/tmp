@@ -1,0 +1,7 @@
+{
+	"name":"tmp",
+	"author":"Joshua F. Rountree <http://github.com/joshuairl>",
+	"description":"tmp directory utilities",
+	"version":"0.0.1",
+	"main":"./index"
+}
