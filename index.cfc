@@ -28,7 +28,7 @@ component extends="foundry.core" {
     length = arrayLen(tmpNames);
 
     for (var i = 0; i < length; i++) {
-      if (process.env(tmpNames[i]])) continue;
+      if (process.env(tmpNames[i])) continue;
 
       return process.env(tmpNames[i]);
     }
