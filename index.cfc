@@ -4,21 +4,18 @@ component extends="foundry.core" {
   */
   variables.fs = require('fs');
   variables.path = require('path');
-  variables.exists = fs.exists || path.exists;
-  
-  /**
-  * The working inner variables.
-  */
-  var
-    // store the actual TMP directory
-    _TMP = _getTMPDir(),
+  variables.process = require('process');
+  variables.exists = fs.exists;
+
+  // store the actual TMP directory
+  variables._TMP = _getTMPDir();
 
     // the random characters to choose from
-    randomChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz",
-    randomCharsLength = randomChars.length,
+  variables.randomChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+  variables.randomCharsLength = randomChars.length;
 
     // this will hold the objects need to be removed on exit
-    _removeObjects = [];
+  variables._removeObjects = [];
 
   /**
   * Gets the temp directory.
@@ -37,7 +34,7 @@ component extends="foundry.core" {
 
     // fallback to the default
     return '/tmp';
-  }
+  };
 
   /**
   * Checks whether the `obj` parameter is defined or not.
@@ -48,7 +45,7 @@ component extends="foundry.core" {
   */
   function _isUndefined(obj) {
     return typeof obj === 'undefined';
-  }
+  };
 
   /**
   * Parses the function arguments.
@@ -66,7 +63,7 @@ component extends="foundry.core" {
     }
 
     return [ options, callback ];
-  }
+  };
 
   /**
   * Gets a temporary file name.
@@ -113,7 +110,7 @@ component extends="foundry.core" {
       }
 
       return template.replace(/XXXXXX/, chars.join(''));
-    }
+    };
 
     (function _getUniqueName() {
       var name = _getName();
@@ -129,7 +126,7 @@ component extends="foundry.core" {
         cb(null, name);
       });
     }());
-  }
+  };
 
   /**
   * Creates and opens a temporary file.
@@ -159,7 +156,7 @@ component extends="foundry.core" {
         cb(null, name, fd);
       });
     });
-  }
+  };
 
   /**
   * Creates a temporary directory.
@@ -187,7 +184,7 @@ component extends="foundry.core" {
         cb(null, name);
       });
     });
-  }
+  };
 
   /**
   * The garbage collector.
@@ -201,8 +198,8 @@ component extends="foundry.core" {
       } catch (e) {
         // already removed?
       }
-    }
-  }
+    };
+  };
 
   // adding to the exit listener
   process.addListener('exit', _garbageCollector);
