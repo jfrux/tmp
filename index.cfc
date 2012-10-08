@@ -2,21 +2,24 @@ component extends="foundry.core" {
   /**
   * Module dependencies.
   */
-  variables.fs = require('fs');
-  variables.path = require('path');
-  variables.process = require('process');
-  variables.exists = fs.exists;
-  variabiles._ = require("util");
+  public any function init() {
+    variables.fs = require('fs');
+    variables.path = require('path');
+    variables.process = require('process');
+    variables.exists = fs.exists;
+    variabiles._ = require("util");
 
-  // store the actual TMP directory
-  variables._TMP = _getTMPDir();
+    // store the actual TMP directory
+    variables._TMP = _getTMPDir();
 
     // the random characters to choose from
-  variables.randomChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
-  variables.randomCharsLength = len(randomChars);
+    variables.randomChars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+    variables.randomCharsLength = len(randomChars);
 
     // this will hold the objects need to be removed on exit
-  variables._removeObjects = [];
+    variables._removeObjects = [];
+    return this;
+  }
 
   public any function dir() {
     return _createTmpDir(argumentCollection=arguments);
@@ -34,7 +37,6 @@ component extends="foundry.core" {
 
     for (var i = 1; i < length; i++) {
       if (len(trim(process.env(tmpNames[i]))) EQ 0) continue;
-      console.log(process.env(tmpNames[i]));
       return process.env(tmpNames[i]);
     }
 
