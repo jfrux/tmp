@@ -99,11 +99,7 @@ component extends="foundry.core" {
 
       // prefix and postfix
       if (!templateDefined) {
-        var name = arrayToList([
-          (!structKeyExists(opts,'prefix')) ? 'tmp-' : opts.prefix,
-          (createUUID()),
-          (!structKeyExists(opts,'postfix')) ? '' : opts.postfix,
-        ],'');
+        var name = arrayToList([(!structKeyExists(opts,'prefix')) ? 'tmp-' : opts.prefix,(createUUID()),(!structKeyExists(opts,'postfix')) ? '' : opts.postfix],'');
         var dir = structKeyExists(opts,'dir')? opts.dir : variables._TMP;
 
         return path.join(dir, name);
